@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const Category = require("../models/Category");
+const Category = require("../models/category");
 
 const auth = require("../middleware/auth");
 const role = require("../middleware/role");
