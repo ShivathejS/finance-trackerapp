@@ -4,13 +4,19 @@ const API = axios.create({
   baseURL: "https://finance-trackerapp.onrender.com",
 });
 
-// attach token automatically
-export const setAuthToken = (token) => {
+// 🔥 ALWAYS attach token automatically
+API.interceptors.request.use((config) => {
+  const token = typeof window !== "undefined"
+    ? localStorage.getItem("token")
+    : null;
+
   if (token) {
-    API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  } else {
-    delete API.defaults.headers.common["Authorization"];
+    config.headers.Authorization = `Bearer ${token}`;
   }
-};
+
+  return config;
+});
+
+export const setAuthToken = () => {}; // no longer needed but keep to avoid breaking imports
 
 export default API;
