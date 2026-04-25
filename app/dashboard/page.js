@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import API, { setAuthToken } from "../../utils/api";
+import API from "../../utils/api";
 import { jwtDecode } from "jwt-decode";
 import Layout from "../../components/Layout";
 import AuthGuard from "../../components/AuthGuard";
@@ -15,54 +15,76 @@ export default function Dashboard() {
   const [categoryId, setCategoryId] = useState("");
   const [role, setRole] = useState("");
 
-  // 🔥 FETCH TRANSACTIONS
+  // ✅ FETCH TRANSACTIONS (WITH TOKEN)
   const fetchData = async () => {
     try {
-      const res = await API.get("/api/transactions");
+      const token = localStorage.getItem("token");
+
+      const res = await API.get("/api/transactions", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       setData(res.data);
+
     } catch (err) {
       console.log("Transaction error:", err.response?.data);
     }
   };
 
-  // 🔥 FETCH CATEGORIES
+  // ✅ FETCH CATEGORIES (WITH TOKEN)
   const fetchCategories = async () => {
     try {
-      const res = await API.get("/api/categories");
+      const token = localStorage.getItem("token");
+
+      const res = await API.get("/api/categories", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("CATEGORIES:", res.data);
       setCategories(res.data);
+
     } catch (err) {
       console.log("Category error:", err.response?.data);
     }
   };
 
-  // 🔥 INIT
-useEffect(() => {
-  const init = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  // ✅ INIT
+  useEffect(() => {
+    const init = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    setAuthToken(token); // 🔥 must be before API calls
+      const decoded = jwtDecode(token);
+      setRole(decoded.role);
 
-    const decoded = jwtDecode(token);
-    setRole(decoded.role);
+      await fetchCategories();
+      await fetchData();
+    };
 
-    await fetchCategories(); // first
-    await fetchData();       // then
-  };
+    init();
+  }, []);
 
-  init();
-}, []);
-  // 🔥 ADD TRANSACTION
+  // ✅ ADD TRANSACTION (WITH TOKEN)
   const addTransaction = async () => {
     if (!amount || isNaN(amount)) return;
 
     try {
+      const token = localStorage.getItem("token");
+
       await API.post("/api/transactions", {
         amount: Number(amount),
         type: "expense",
         note,
         categoryId,
         date: new Date()
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       setAmount("");
@@ -70,12 +92,13 @@ useEffect(() => {
       setCategoryId("");
 
       fetchData();
+
     } catch (err) {
       console.log("Add error:", err.response?.data);
     }
   };
 
-  // 🔥 CALCULATIONS
+  // CALCULATIONS
   const totalExpense = data
     .filter(tx => tx.type === "expense")
     .reduce((sum, tx) => sum + tx.amount, 0);
@@ -86,7 +109,7 @@ useEffect(() => {
 
   const balance = totalIncome - totalExpense;
 
-  // 🔥 CHART DATA
+  // CHART
   const chartData = Object.values(
     data
       .filter(tx => tx.type === "expense")
@@ -107,15 +130,12 @@ useEffect(() => {
     <AuthGuard allowedRoles={["admin", "user"]}>
       <Layout>
 
-        {/* HEADER */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-gray-500">Track your finances</p>
         </div>
 
-        {/* STATS */}
         <div className="grid grid-cols-3 gap-6 mb-8">
-
           <div className="bg-green-500 text-white p-6 rounded-xl shadow">
             <p>Income</p>
             <h2 className="text-xl font-bold">₹{totalIncome}</h2>
@@ -130,21 +150,16 @@ useEffect(() => {
             <p>Balance</p>
             <h2 className="text-xl font-bold">₹{balance}</h2>
           </div>
-
         </div>
 
-        {/* MAIN GRID */}
         <div className="grid grid-cols-2 gap-6 mb-8">
 
-          {/* CHART */}
           <div className="bg-white p-6 rounded-xl shadow">
             <h2 className="font-semibold mb-4">Spending</h2>
             <ExpenseChart data={chartData} />
           </div>
 
-          {/* ADD TRANSACTION */}
           <div className="bg-white p-6 rounded-xl shadow">
-
             <h2 className="font-semibold mb-4">Add Transaction</h2>
 
             <div className="flex flex-col gap-3">
@@ -190,21 +205,15 @@ useEffect(() => {
 
         </div>
 
-        {/* TRANSACTIONS */}
         <div className="bg-white p-6 rounded-xl shadow">
-
           <h2 className="font-semibold mb-4">Transactions</h2>
 
           {data.map(tx => (
-            <div
-              key={tx._id}
-              className="flex justify-between py-2 border-b"
-            >
+            <div key={tx._id} className="flex justify-between py-2 border-b">
               <span>₹{tx.amount}</span>
               <span>{tx.note}</span>
             </div>
           ))}
-
         </div>
 
       </Layout>
