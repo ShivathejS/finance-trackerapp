@@ -1,27 +1,38 @@
-const router = require("express").Router();
-const Category = require("../models/category");
-
+const express = require("express");
+const router = express.Router();
+const Category = require("../models/Category");
 const auth = require("../middleware/auth");
-const role = require("../middleware/role");
 
-// CREATE CATEGORY (ADMIN ONLY)
-router.post("/", auth, role("admin"), async (req, res) => {
+// GET all categories
+router.get("/", auth, async (req, res) => {
   try {
-    const category = await Category.create({
-      ...req.body,
-      createdBy: req.user.id
-    });
-
-    res.json(category);
+    const categories = await Category.find();
+    res.json(categories);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ msg: "Server error" });
   }
 });
 
-// GET ALL CATEGORIES (ALL LOGGED USERS)
-router.get("/", auth, async (req, res) => {
-  const categories = await Category.find();
-  res.json(categories);
+// CREATE category
+router.post("/", auth, async (req, res) => {
+  try {
+    console.log("BODY:", req.body); // 🔥 debug
+
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ msg: "Name is required" });
+    }
+
+    const category = new Category({ name });
+    await category.save();
+
+    res.json(category);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
 });
 
 module.exports = router;
