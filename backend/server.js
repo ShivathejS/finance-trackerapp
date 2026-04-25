@@ -12,7 +12,9 @@ require("dotenv").config();
 const app = express();
 
 // middleware
-app.use(cors());
+app.use(cors({
+  origin: "https://finance-trackerapp-shivathejs-projects.vercel.app"
+}));
 app.use(express.json());
 
 // test route
