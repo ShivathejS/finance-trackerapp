@@ -15,25 +15,32 @@ export default function Dashboard() {
   const [categoryId, setCategoryId] = useState("");
   const [role, setRole] = useState("");
 
+  // 🔥 FETCH TRANSACTIONS
   const fetchData = async () => {
-    const res = await API.get("/transactions");
-    setData(res.data);
+    try {
+      const res = await API.get("/api/transactions");
+      setData(res.data);
+    } catch (err) {
+      console.log("Transaction error:", err.response?.data);
+    }
   };
 
- const fetchCategories = async () => {
-  try {
-    const res = await API.get("/categories");
-    setCategories(res.data);
-  } catch (err) {
-    console.log("Failed to load categories");
-  }
-};
+  // 🔥 FETCH CATEGORIES
+  const fetchCategories = async () => {
+    try {
+      const res = await API.get("/api/categories");
+      setCategories(res.data);
+    } catch (err) {
+      console.log("Category error:", err.response?.data);
+    }
+  };
 
+  // 🔥 INIT
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    setAuthToken(token);
+    setAuthToken(token); // VERY IMPORTANT
 
     const decoded = jwtDecode(token);
     setRole(decoded.role);
@@ -42,23 +49,30 @@ export default function Dashboard() {
     fetchCategories();
   }, []);
 
+  // 🔥 ADD TRANSACTION
   const addTransaction = async () => {
     if (!amount || isNaN(amount)) return;
 
-    await API.post("/transactions", {
-      amount: Number(amount),
-      type: "expense",
-      note,
-      categoryId,
-      date: new Date()
-    });
+    try {
+      await API.post("/api/transactions", {
+        amount: Number(amount),
+        type: "expense",
+        note,
+        categoryId,
+        date: new Date()
+      });
 
-    setAmount("");
-    setNote("");
-    setCategoryId("");
-    fetchData();
+      setAmount("");
+      setNote("");
+      setCategoryId("");
+
+      fetchData();
+    } catch (err) {
+      console.log("Add error:", err.response?.data);
+    }
   };
 
+  // 🔥 CALCULATIONS
   const totalExpense = data
     .filter(tx => tx.type === "expense")
     .reduce((sum, tx) => sum + tx.amount, 0);
@@ -69,23 +83,22 @@ export default function Dashboard() {
 
   const balance = totalIncome - totalExpense;
 
+  // 🔥 CHART DATA
   const chartData = Object.values(
-  data
-    .filter(tx => tx.type === "expense") // only expenses
-    .reduce((acc, tx) => {
-      const category = categories.find(c => c._id === tx.categoryId);
+    data
+      .filter(tx => tx.type === "expense")
+      .reduce((acc, tx) => {
+        const category = categories.find(c => c._id === tx.categoryId);
+        const name = category ? category.name : "Other";
 
-      const name = category ? category.name : "Other";
+        if (!acc[name]) {
+          acc[name] = { name, value: 0 };
+        }
 
-      if (!acc[name]) {
-        acc[name] = { name, value: 0 };
-      }
-
-      acc[name].value += tx.amount;
-
-      return acc;
-    }, {})
-);
+        acc[name].value += tx.amount;
+        return acc;
+      }, {})
+  );
 
   return (
     <AuthGuard allowedRoles={["admin", "user"]}>
@@ -126,7 +139,7 @@ export default function Dashboard() {
             <ExpenseChart data={chartData} />
           </div>
 
-          {/* ADD */}
+          {/* ADD TRANSACTION */}
           <div className="bg-white p-6 rounded-xl shadow">
 
             <h2 className="font-semibold mb-4">Add Transaction</h2>
@@ -152,12 +165,14 @@ export default function Dashboard() {
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
               >
-                <option value="">Category</option>
+                <option value="">Select Category</option>
+
                 {categories.map(cat => (
                   <option key={cat._id} value={cat._id}>
                     {cat.name}
                   </option>
                 ))}
+
               </select>
 
               <button
