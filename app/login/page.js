@@ -11,21 +11,28 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const res = await API.post("/auth/login", { email, password });
+      const res = await API.post("/api/auth/login", {
+        email,
+        password,
+      });
 
       const token = res.data.token;
+
       localStorage.setItem("token", token);
       setAuthToken(token);
 
       router.push("/dashboard");
-    } catch {
-      alert("Invalid credentials");
+
+    } catch (err) {
+      console.log("LOGIN ERROR:", err); // 🔥 VERY IMPORTANT
+
+      // show real backend message if exists
+      alert(err.response?.data?.message || "Login failed");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
-
       <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-96">
 
         <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-white">
@@ -35,6 +42,7 @@ export default function Login() {
         <input
           className="w-full border p-3 rounded mb-4 bg-gray-100 dark:bg-gray-700 dark:text-white"
           placeholder="Email"
+          value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
 
@@ -42,6 +50,7 @@ export default function Login() {
           type="password"
           className="w-full border p-3 rounded mb-4 bg-gray-100 dark:bg-gray-700 dark:text-white"
           placeholder="Password"
+          value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
