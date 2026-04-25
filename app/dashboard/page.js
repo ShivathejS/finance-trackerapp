@@ -36,19 +36,22 @@ export default function Dashboard() {
   };
 
   // 🔥 INIT
-  useEffect(() => {
+useEffect(() => {
+  const init = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    setAuthToken(token); // VERY IMPORTANT
+    setAuthToken(token); // 🔥 must be before API calls
 
     const decoded = jwtDecode(token);
     setRole(decoded.role);
 
-    fetchData();
-    fetchCategories();
-  }, []);
+    await fetchCategories(); // first
+    await fetchData();       // then
+  };
 
+  init();
+}, []);
   // 🔥 ADD TRANSACTION
   const addTransaction = async () => {
     if (!amount || isNaN(amount)) return;
