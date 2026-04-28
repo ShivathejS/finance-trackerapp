@@ -26,6 +26,7 @@ export default function Dashboard() {
         },
       });
 
+      console.log("DATA:", res.data); // DEBUG
       setData(res.data);
     } catch (err) {
       console.log("Transaction error:", err.response?.data);
@@ -131,100 +132,126 @@ export default function Dashboard() {
         {/* HEADER */}
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-500 text-sm md:text-base">
-            Track your finances
+          <p className="text-gray-500">
+            {role === "admin"
+              ? "Admin view: All users' transactions"
+              : "Track your finances"}
           </p>
         </div>
 
         {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-
-          <div className="bg-gradient-to-r from-green-400 to-green-600 text-white p-5 rounded-2xl shadow-lg">
-            <p className="opacity-80">Income</p>
-            <h2 className="text-2xl font-bold mt-1">₹{totalIncome}</h2>
+          <div className="bg-green-500 text-white p-5 rounded-xl">
+            <p>Income</p>
+            <h2 className="text-xl font-bold">₹{totalIncome}</h2>
           </div>
 
-          <div className="bg-gradient-to-r from-red-400 to-red-600 text-white p-5 rounded-2xl shadow-lg">
-            <p className="opacity-80">Expense</p>
-            <h2 className="text-2xl font-bold mt-1">₹{totalExpense}</h2>
+          <div className="bg-red-500 text-white p-5 rounded-xl">
+            <p>Expense</p>
+            <h2 className="text-xl font-bold">₹{totalExpense}</h2>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-400 to-blue-600 text-white p-5 rounded-2xl shadow-lg">
-            <p className="opacity-80">Balance</p>
-            <h2 className="text-2xl font-bold mt-1">₹{balance}</h2>
+          <div className="bg-blue-500 text-white p-5 rounded-xl">
+            <p>Balance</p>
+            <h2 className="text-xl font-bold">₹{balance}</h2>
           </div>
-
         </div>
 
         {/* MAIN GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
-          {/* CHART */}
-          <div className="bg-white p-4 md:p-6 rounded-xl shadow">
+          <div className="bg-white p-4 rounded-xl shadow">
             <h2 className="font-semibold mb-4">Spending</h2>
             <ExpenseChart data={chartData} />
           </div>
 
-          {/* ADD TRANSACTION */}
-          <div className="bg-white p-4 md:p-6 rounded-xl shadow">
+          <div className="bg-white p-4 rounded-xl shadow">
             <h2 className="font-semibold mb-4">Add Transaction</h2>
 
             <div className="flex flex-col gap-3">
-
               <input
-                className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="p-2 border rounded"
                 placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
 
               <input
-                className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="p-2 border rounded"
                 placeholder="Note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
 
               <select
-                className="p-3 border rounded-lg w-full"
+                className="p-2 border rounded"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
               >
                 <option value="">Select Category</option>
-
                 {categories.map((cat) => (
                   <option key={cat._id} value={cat._id}>
                     {cat.name}
                   </option>
                 ))}
-
               </select>
 
               <button
                 onClick={addTransaction}
-                className="bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition"
+                className="bg-blue-500 text-white p-2 rounded"
               >
                 Add
               </button>
-
             </div>
           </div>
-
         </div>
 
-        {/* TRANSACTIONS */}
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow">
+        {/* 🔥 TRANSACTIONS */}
+        <div className="bg-white p-4 rounded-xl shadow">
           <h2 className="font-semibold mb-4">Transactions</h2>
 
-          {data.map((tx) => (
-            <div
-              key={tx._id}
-              className="flex justify-between py-2 border-b text-sm md:text-base"
-            >
-              <span>₹{tx.amount}</span>
-              <span>{tx.note}</span>
-            </div>
-          ))}
+          {data.length === 0 ? (
+            <p>No transactions found</p>
+          ) : role === "admin" ? (
+            Object.entries(
+              data.reduce((acc, tx) => {
+                if (!acc[tx.userId]) acc[tx.userId] = [];
+                acc[tx.userId].push(tx);
+                return acc;
+              }, {})
+            ).map(([userId, userTxs]) => {
+              const total = userTxs.reduce((sum, t) => sum + t.amount, 0);
+
+              return (
+                <div key={userId} className="mb-4 border p-3 rounded">
+                  <div className="flex justify-between font-semibold">
+                    <span>User: {userId}</span>
+                    <span>₹{total}</span>
+                  </div>
+
+                  {userTxs.map((tx) => (
+                    <div
+                      key={tx._id}
+                      className="flex justify-between text-sm border-b py-1"
+                    >
+                      <span>₹{tx.amount}</span>
+                      <span>{tx.note}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          ) : (
+            data.map((tx) => (
+              <div
+                key={tx._id}
+                className="flex justify-between border-b py-2"
+              >
+                <span>₹{tx.amount}</span>
+                <span>{tx.note}</span>
+              </div>
+            ))
+          )}
         </div>
 
       </Layout>
