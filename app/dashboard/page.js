@@ -26,8 +26,8 @@ export default function Dashboard() {
         },
       });
 
-      console.log("DATA:", res.data); // DEBUG
-      setData(res.data);
+      console.log("DATA FROM API:", res.data);
+      setData([...res.data]); // 🔥 force state update
     } catch (err) {
       console.log("Transaction error:", err.response?.data);
     }
@@ -57,6 +57,7 @@ export default function Dashboard() {
       if (!token) return;
 
       const decoded = jwtDecode(token);
+      console.log("ROLE:", decoded.role); // DEBUG
       setRole(decoded.role);
 
       await fetchCategories();
@@ -134,7 +135,7 @@ export default function Dashboard() {
           <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
           <p className="text-gray-500">
             {role === "admin"
-              ? "Admin view: All users' transactions"
+              ? "Admin view: All users"
               : "Track your finances"}
           </p>
         </div>
@@ -160,11 +161,13 @@ export default function Dashboard() {
         {/* MAIN GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
+          {/* CHART */}
           <div className="bg-white p-4 rounded-xl shadow">
             <h2 className="font-semibold mb-4">Spending</h2>
             <ExpenseChart data={chartData} />
           </div>
 
+          {/* ADD TRANSACTION */}
           <div className="bg-white p-4 rounded-xl shadow">
             <h2 className="font-semibold mb-4">Add Transaction</h2>
 
@@ -206,17 +209,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 🔥 TRANSACTIONS */}
+        {/* 🔥 TRANSACTIONS (FINAL FIX) */}
         <div className="bg-white p-4 rounded-xl shadow">
           <h2 className="font-semibold mb-4">Transactions</h2>
 
           {data.length === 0 ? (
             <p>No transactions found</p>
-          ) : role === "admin" ? (
+          ) : (
             Object.entries(
               data.reduce((acc, tx) => {
-                if (!acc[tx.userId]) acc[tx.userId] = [];
-                acc[tx.userId].push(tx);
+                const key = tx.userId || "unknown";
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(tx);
                 return acc;
               }, {})
             ).map(([userId, userTxs]) => {
@@ -224,10 +228,19 @@ export default function Dashboard() {
 
               return (
                 <div key={userId} className="mb-4 border p-3 rounded">
-                  <div className="flex justify-between font-semibold">
-                    <span>User: {userId}</span>
-                    <span>₹{total}</span>
-                  </div>
+
+                  {/* Show user label only if multiple users exist */}
+                  {Object.keys(
+                    data.reduce((acc, tx) => {
+                      acc[tx.userId] = true;
+                      return acc;
+                    }, {})
+                  ).length > 1 && (
+                    <div className="flex justify-between font-semibold mb-2">
+                      <span>User: {userId}</span>
+                      <span>₹{total}</span>
+                    </div>
+                  )}
 
                   {userTxs.map((tx) => (
                     <div
@@ -241,16 +254,6 @@ export default function Dashboard() {
                 </div>
               );
             })
-          ) : (
-            data.map((tx) => (
-              <div
-                key={tx._id}
-                className="flex justify-between border-b py-2"
-              >
-                <span>₹{tx.amount}</span>
-                <span>{tx.note}</span>
-              </div>
-            ))
           )}
         </div>
 
