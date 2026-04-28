@@ -1,4 +1,4 @@
-"use client";
+/*"use client";
 
 import { useEffect, useState } from "react";
 import API from "../../utils/api";
@@ -131,6 +131,7 @@ export default function Dashboard() {
       <Layout>
 
         {/* HEADER */}
+        /*
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
           <p className="text-gray-500">
@@ -140,7 +141,6 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-green-500 text-white p-5 rounded-xl">
             <p>Income</p>
@@ -158,16 +158,15 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* MAIN GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
-          {/* CHART */}
+          
           <div className="bg-white p-4 rounded-xl shadow">
             <h2 className="font-semibold mb-4">Spending</h2>
             <ExpenseChart data={chartData} />
           </div>
 
-          {/* ADD TRANSACTION */}
+          
           <div className="bg-white p-4 rounded-xl shadow">
             <h2 className="font-semibold mb-4">Add Transaction</h2>
 
@@ -209,7 +208,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 🔥 TRANSACTIONS (FINAL FIX) */}
+   
         <div className="bg-white p-4 rounded-xl shadow">
           <h2 className="font-semibold mb-4">Transactions</h2>
 
@@ -229,7 +228,7 @@ export default function Dashboard() {
               return (
                 <div key={userId} className="mb-4 border p-3 rounded">
 
-                  {/* Show user label only if multiple users exist */}
+                
                   {Object.keys(
                     data.reduce((acc, tx) => {
                       acc[tx.userId] = true;
@@ -254,6 +253,84 @@ export default function Dashboard() {
                 </div>
               );
             })
+          )}
+        </div>
+
+      </Layout>
+    </AuthGuard>
+  );
+}
+  */
+ "use client";
+
+import { useEffect, useState } from "react";
+import API from "../../utils/api";
+import { jwtDecode } from "jwt-decode";
+import Layout from "../../components/Layout";
+import AuthGuard from "../../components/AuthGuard";
+
+export default function Dashboard() {
+  const [data, setData] = useState([]);
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const decoded = jwtDecode(token);
+      setRole(decoded.role);
+
+      try {
+        const res = await API.get("/api/transactions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("API DATA:", res.data); // THIS will show in console
+        setData(res.data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    load();
+  }, []);
+
+  return (
+    <AuthGuard allowedRoles={["admin", "user"]}>
+      <Layout>
+
+        <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+
+        {/* 🔥 FORCE DISPLAY RAW DATA */}
+        <div className="bg-white p-4 rounded shadow mb-6">
+          <h2 className="font-semibold mb-2">Raw Data</h2>
+          <pre className="text-xs overflow-auto">
+            {JSON.stringify(data, null, 2)}
+          </pre>
+        </div>
+
+        {/* 🔥 SIMPLE TRANSACTION LIST */}
+        <div className="bg-white p-4 rounded shadow">
+          <h2 className="font-semibold mb-4">Transactions</h2>
+
+          {data.length === 0 ? (
+            <p>No data</p>
+          ) : (
+            data.map((tx) => (
+              <div
+                key={tx._id}
+                className="flex justify-between border-b py-2"
+              >
+                <span>₹{tx.amount}</span>
+                <span>{tx.note}</span>
+                <span className="text-xs text-gray-400">
+                  {tx.userId}
+                </span>
+              </div>
+            ))
           )}
         </div>
 
