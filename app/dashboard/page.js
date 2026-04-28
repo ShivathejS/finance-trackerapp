@@ -271,27 +271,26 @@ import AuthGuard from "../../components/AuthGuard";
 
 export default function Dashboard() {
   const [data, setData] = useState([]);
-  const [role, setRole] = useState("");
 
   useEffect(() => {
     const load = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const decoded = jwtDecode(token);
-      setRole(decoded.role);
-
       try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const decoded = jwtDecode(token);
+        console.log("ROLE:", decoded.role);
+
         const res = await API.get("/api/transactions", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        console.log("API DATA:", res.data); // THIS will show in console
+        console.log("API DATA:", res.data);
         setData(res.data);
       } catch (err) {
-        console.log(err);
+        console.log("ERROR:", err);
       }
     };
 
@@ -301,10 +300,9 @@ export default function Dashboard() {
   return (
     <AuthGuard allowedRoles={["admin", "user"]}>
       <Layout>
-
         <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
 
-        {/* 🔥 FORCE DISPLAY RAW DATA */}
+        {/* RAW DEBUG */}
         <div className="bg-white p-4 rounded shadow mb-6">
           <h2 className="font-semibold mb-2">Raw Data</h2>
           <pre className="text-xs overflow-auto">
@@ -312,7 +310,7 @@ export default function Dashboard() {
           </pre>
         </div>
 
-        {/* 🔥 SIMPLE TRANSACTION LIST */}
+        {/* SIMPLE LIST */}
         <div className="bg-white p-4 rounded shadow">
           <h2 className="font-semibold mb-4">Transactions</h2>
 
@@ -320,10 +318,7 @@ export default function Dashboard() {
             <p>No data</p>
           ) : (
             data.map((tx) => (
-              <div
-                key={tx._id}
-                className="flex justify-between border-b py-2"
-              >
+              <div key={tx._id} className="flex justify-between border-b py-2">
                 <span>₹{tx.amount}</span>
                 <span>{tx.note}</span>
                 <span className="text-xs text-gray-400">
@@ -333,7 +328,6 @@ export default function Dashboard() {
             ))
           )}
         </div>
-
       </Layout>
     </AuthGuard>
   );
