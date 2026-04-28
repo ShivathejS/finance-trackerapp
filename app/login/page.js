@@ -9,6 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const router = useRouter();
 
+  // 🔥 FIXED LOGIN FUNCTION
   const handleLogin = async () => {
     try {
       const res = await API.post("/api/auth/login", {
@@ -16,17 +17,31 @@ export default function Login() {
         password,
       });
 
-      const token = res.data.token;
+      console.log("LOGIN RESPONSE:", res.data); // DEBUG
 
+      const token = res.data?.token;
+
+      if (!token) {
+        alert("Login failed: No token received");
+        return;
+      }
+
+      // ✅ store token
       localStorage.setItem("token", token);
+
+      // ✅ set token in axios headers (if your util supports it)
       setAuthToken(token);
 
+      // 🔥 confirm it's saved
+      console.log("Saved token:", localStorage.getItem("token"));
+
+      // redirect
       router.push("/dashboard");
 
     } catch (err) {
-      console.log("LOGIN ERROR:", err); // 🔥 VERY IMPORTANT
+      console.log("LOGIN ERROR FULL:", err);
+      console.log("BACKEND ERROR:", err.response?.data);
 
-      // show real backend message if exists
       alert(err.response?.data?.message || "Login failed");
     }
   };
